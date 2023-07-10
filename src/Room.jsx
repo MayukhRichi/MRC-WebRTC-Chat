@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { useParams } from "react-router-dom";
 
 const UnloadListener = ({ disconnect }) => {
@@ -13,7 +13,6 @@ const UnloadListener = ({ disconnect }) => {
 const Room = ({ dataChannel, startChat }) => {
   const { partnerKey } = useParams();
   const inputRef = useRef(null);
-  const chatEndRef = useRef(null);
 
   const [chats, setChats] = useState([]);
   const addChat = (chatType, chatText) => {
@@ -23,9 +22,14 @@ const Room = ({ dataChannel, startChat }) => {
     ]);
   };
 
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chats]);
+  const contRef = useRef();
+  const scrollToBottom = () => {
+    contRef.current.scrollTop = contRef.current.scrollHeight;
+  };
+
+  useLayoutEffect(() => {
+    scrollToBottom();
+  });
 
   const sendData = (data) => {
     if (data.length) {
@@ -62,9 +66,12 @@ const Room = ({ dataChannel, startChat }) => {
         <h2 className="card-secondary">{partnerKey}</h2>
       </div>
 
-      <div className="mt-4 h-1/2 overflow-y-scroll">
+      <div className="mt-4 h-1/2">
         <div className="flex flex-col items-center justify-center h-full">
-          <div className="flex flex-col justify-end h-fit min-h-full w-2/3 p-2 bg-zinc-100 rounded-lg shadow">
+          <div
+            ref={contRef}
+            className="flex flex-col h-fit min-h-full w-2/3 p-2 bg-zinc-100 rounded-lg shadow overflow-y-scroll"
+          >
             {chats.map((each, index) => (
               <p key={index} className={each.chatType}>
                 {each.chatText}
@@ -72,7 +79,6 @@ const Room = ({ dataChannel, startChat }) => {
             ))}
           </div>
         </div>
-        <div ref={chatEndRef} />
       </div>
 
       <div className="flex justify-center">
@@ -82,7 +88,8 @@ const Room = ({ dataChannel, startChat }) => {
           placeholder="message"
           ref={inputRef}
           onKeyDown={(e) => {
-            if (e.key === "Enter") sendData(inputRef.current.value);
+            if (startChat && e.key === "Enter")
+              sendData(inputRef.current.value);
           }}
         />
         {startChat ? (

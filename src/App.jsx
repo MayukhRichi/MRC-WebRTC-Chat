@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { v4 } from "uuid";
 import io from "socket.io-client";
@@ -34,9 +34,22 @@ const Controls = ({ keyVal, setSocket }) => {
 
 const App = () => {
   const key = useRef(v4());
+  const [isServerRunning, toggleServerRunning] = useState(false);
   const [socket, setSocket] = useState(null);
   const [dataChannel, setDataChannel] = useState(null);
   const [startChat, setStartChat] = useState(false);
+
+  useEffect(() => {
+    fetch("https://my-ws-server1.onrender.com/")
+      .then((resp) => {
+        if (resp.ok) console.log("server: test success");
+        else throw new Error("server: test failure");
+      })
+      .then(() => toggleServerRunning(true))
+      .catch(() => {
+        throw new Error("server: test failure");
+      });
+  }, []);
 
   return (
     <BrowserRouter>
@@ -50,7 +63,11 @@ const App = () => {
       <Routes>
         <Route
           path="/"
-          element={<Controls keyVal={key.current} setSocket={setSocket} />}
+          element={
+            isServerRunning ? (
+              <Controls keyVal={key.current} setSocket={setSocket} />
+            ) : null
+          }
         />
         <Route
           path="/:key"
